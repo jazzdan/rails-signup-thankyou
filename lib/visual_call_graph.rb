@@ -1,16 +1,17 @@
-require 'graphviz'
-
 class CallGraphStorage
   def initialize
     @datalog_program = ""
+    @count = 0
   end
 
   def add_parent(subject, target)
     @datalog_program += "parent(\"#{subject}\", \"#{target}\").\n"
+    @count = @count + 1
   end
 
   def add_child(subject, target, path)
     @datalog_program += "child(\"#{subject}\", \"#{target}\", \"#{path}\").\n"
+    @count = @count + 1
   end
 
   def output_datalog
@@ -24,11 +25,7 @@ class GraphManager
     @edges   = []
     @options = options
 
-    # TODO replace this part with a different backend
-    @g = GraphViz.new(:G, :type => :digraph)
     @cgs = CallGraphStorage.new
-
-    @g.add_node("start")
   end
 
   def add_edges(event)
@@ -43,7 +40,6 @@ class GraphManager
     return if @edges.include?(edge)
 
     @edges << edge
-    @g.add_edge(*@edges.last)
   end
 
   def get_node_name(event)
@@ -54,16 +50,8 @@ class GraphManager
     end
   end
 
-  def output(*args)
-    @g.output(*args)
-  end
-
   def output_datalog
     @cgs.output_datalog
-  end
-
-  def node_count
-    @g.node_count
   end
 
   def pop
@@ -84,7 +72,6 @@ module VisualCallGraph
 
     trace =
     TracePoint.new(:call, :return) do |event|
-      puts event.path
       case event.event
       when :return then graph.pop
       when :call   then graph.add_edges(event)
@@ -95,13 +82,6 @@ module VisualCallGraph
     yield
     trace.disable
 
-    graph.output(png: "#{Dir.pwd}/call_graph.png")
     graph.output_datalog
-
-    puts "Call graph created with a total of #{node_count(graph)}."
-  end
-
-  def node_count(graph)
-    "#{graph.node_count} #{(graph.node_count > 1 ? 'nodes' : 'node')}"
   end
 end

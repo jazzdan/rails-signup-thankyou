@@ -30,3 +30,7 @@ group :development do
   gem 'better_errors'
   gem 'rails_layout'
 end
+
+gem "graphviz", "~> 1.0"
+
+gem "ruby-graphviz", "~> 1.2"

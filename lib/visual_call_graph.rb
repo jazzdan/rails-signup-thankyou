@@ -1,17 +1,20 @@
 require 'graphviz'
 
 class CallGraphStorage
-  def add_parent(parent, child)
-
+  def initialize
+    @datalog_program = ""
   end
 
-  def add_child(child, parent)
-
+  def add_parent(subject, target)
+    @datalog_program += "parent(\"#{subject}\", \"#{target}\").\n"
   end
 
-  # return string
+  def add_child(subject, target, path)
+    @datalog_program += "child(\"#{subject}\", \"#{target}\", \"#{path}\").\n"
+  end
+
   def output_datalog
-
+    File.open('run_facts.pl', 'w') { |file| file.write(@datalog_program) }
   end
 end
 
@@ -33,7 +36,7 @@ class GraphManager
     #       parent,      child
     edge = [@stack.last, node]
     @cgs.add_parent(node, @stack.last)
-    @cgs.add_child(@stack.last, node)
+    @cgs.add_child(@stack.last, node, event.path)
     @stack << node
 
 
@@ -81,6 +84,7 @@ module VisualCallGraph
 
     trace =
     TracePoint.new(:call, :return) do |event|
+      puts event.path
       case event.event
       when :return then graph.pop
       when :call   then graph.add_edges(event)
@@ -92,6 +96,7 @@ module VisualCallGraph
     trace.disable
 
     graph.output(png: "#{Dir.pwd}/call_graph.png")
+    graph.output_datalog
 
     puts "Call graph created with a total of #{node_count(graph)}."
   end

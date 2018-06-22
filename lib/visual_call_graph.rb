@@ -1,21 +1,41 @@
 require 'graphviz'
 
+class CallGraphStorage
+  def add_parent(parent, child)
+
+  end
+
+  def add_child(child, parent)
+
+  end
+
+  # return string
+  def output_datalog
+
+  end
+end
+
 class GraphManager
   def initialize(options)
     @stack   = ["start"]
     @edges   = []
     @options = options
 
+    # TODO replace this part with a different backend
     @g = GraphViz.new(:G, :type => :digraph)
+    @cgs = CallGraphStorage.new
 
     @g.add_node("start")
   end
 
   def add_edges(event)
     node = get_node_name(event)
+    #       parent,      child
     edge = [@stack.last, node]
-
+    @cgs.add_parent(node, @stack.last)
+    @cgs.add_child(@stack.last, node)
     @stack << node
+
 
     return if @edges.include?(edge)
 
@@ -33,6 +53,10 @@ class GraphManager
 
   def output(*args)
     @g.output(*args)
+  end
+
+  def output_datalog
+    @cgs.output_datalog
   end
 
   def node_count
